@@ -238,23 +238,35 @@ type HTTPError struct {
 	Message string `json:"omitempty"`
 }
 
+func writeError(res http.ResponseWriter, status int, message string) {
+	res.WriteHeader(status)
+	httpError := HTTPError{
+		Status:  status,
+		Message: message,
+	}
+	json.NewEncoder(res).Encode(httpError)
+}
+
 func handlePullHook(res http.ResponseWriter, req *http.Request) {
-	var payload PullPayload
-	decoder := json.NewDecoder(req.Body)
-	err := decoder.Decode(&payload)
+	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		res.WriteHeader(http.StatusInternalServerError)
-		httpError := HTTPError{
-			Status:  http.StatusBadRequest,
-			Message: "Could not decode JSON payload",
-		}
-		json.NewEncoder(res).Encode(httpError)
+		writeError(res, http.StatusInternalServerError, "Invalid payload")
 		return
 	}
 
-	// TODO: Verify secret
+	var payload PullPayload
+	err = json.Unmarshal(body, &payload)
+	if err != nil {
+		writeError(res, http.StatusInternalServerError, "Invalid payload")
+		return
+	}
 
-	fmt.Println(payload)
+	signature := req.Header.Get("X-Hub-Signature")
+	signed := utils.CheckSignature([]byte(os.Getenv("HOOK_SECRET")), body, signature)
+	if !signed {
+		writeError(res, http.StatusForbidden, "Invalid signature")
+		return
+	}
 
 	handler := PullHandler{
 		client: github.NewClient(&http.Client{}),
