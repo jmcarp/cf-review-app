@@ -13,6 +13,5 @@ func CheckSignature(key, message []byte, signature string) bool {
 	h.Write(message)
 	digest := hex.EncodeToString(h.Sum(nil))
 	calculated := fmt.Sprintf("sha1=%s", digest)
-	fmt.Println(signature, calculated)
 	return subtle.ConstantTimeCompare([]byte(signature), []byte(calculated)) == 1
 }

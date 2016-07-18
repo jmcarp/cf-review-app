@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	// "golang.org/x/oauth2"
 	"github.com/google/go-github/github"
 	"github.com/gorilla/mux"
+	"golang.org/x/oauth2"
 	"gopkg.in/yaml.v2"
 
 	"github.com/jmcarp/cf-review-app/utils"
@@ -85,36 +85,19 @@ type PullHandler struct {
 }
 
 func (ph *PullHandler) Open(payload PullPayload) error {
-	path, err := ioutil.TempDir("", "")
+	parts := strings.Split(payload.PullRequest.Head.Repo.FullName, "/")
+
+	path, err := ph.download(payload)
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(path)
 
-	parts := strings.Split(payload.PullRequest.Head.Repo.FullName, "/")
-	url, err := ph.getUrl(parts[0], parts[1], payload.PullRequest.Head.Sha)
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	err = utils.Untar(resp.Body, path)
-	if err != nil {
-		return err
-	}
-
 	dir := fmt.Sprintf("%s-%s-%s", parts[0], parts[1], payload.PullRequest.Head.Sha[:7])
 	appPath := filepath.Join(path, dir)
 	appYmlPath := filepath.Join(appPath, "app.yml")
 
-	content, err := ioutil.ReadFile(appYmlPath)
-	if err != nil {
-		return err
-	}
-
-	var app App
-	err = yaml.Unmarshal(content, &app)
+	app, err := ph.getAppYml(appYmlPath)
 	if err != nil {
 		return err
 	}
@@ -129,13 +112,47 @@ func (ph *PullHandler) Open(payload PullPayload) error {
 	err = ph.cfClient.Login()
 	err = ph.cfClient.Target(os.Getenv("CF_ORG"))
 	err = ph.cfClient.Create(app)
+	if err != nil {
+		return err
+	}
 
-	// TODO: Update pull request status
+	_, _, err = ph.client.Repositories.CreateStatus(
+		parts[0], parts[1],
+		payload.PullRequest.Head.Sha,
+		&github.RepoStatus{
+			State:       String("success"),
+			Description: String("Deployed review app"),
+		},
+	)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func (ph *PullHandler) Close(payload PullPayload) error {
+	parts := strings.Split(payload.PullRequest.Head.Repo.FullName, "/")
+
+	path, err := ph.download(payload)
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(path)
+
+	dir := fmt.Sprintf("%s-%s-%s", parts[0], parts[1], payload.PullRequest.Head.Sha[:7])
+	appPath := filepath.Join(path, dir)
+	appYmlPath := filepath.Join(appPath, "app.yml")
+
+	app, err := ph.getAppYml(appYmlPath)
+	if err != nil {
+		return err
+	}
+
+	err = ph.cfClient.Login()
+	err = ph.cfClient.Target(os.Getenv("CF_ORG"))
+	err = ph.cfClient.Delete(app)
+
 	return nil
 }
 
@@ -146,6 +163,43 @@ func (ph *PullHandler) getUrl(user, repo, sha string) (string, error) {
 		return "", err
 	}
 	return url.String(), nil
+}
+
+func (ph *PullHandler) download(payload PullPayload) (string, error) {
+	path, err := ioutil.TempDir("", "")
+	if err != nil {
+		return "", err
+	}
+
+	parts := strings.Split(payload.PullRequest.Head.Repo.FullName, "/")
+	url, err := ph.getUrl(parts[0], parts[1], payload.PullRequest.Head.Sha)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	err = utils.Untar(resp.Body, path)
+	if err != nil {
+		return "", err
+	}
+
+	return path, nil
+}
+
+func (ph *PullHandler) getAppYml(path string) (App, error) {
+	content, err := ioutil.ReadFile(path)
+	if err != nil {
+		return App{}, err
+	}
+
+	var app App
+	err = yaml.Unmarshal(content, &app)
+	if err != nil {
+		return App{}, err
+	}
+
+	return app, nil
 }
 
 type App struct {
@@ -211,7 +265,7 @@ func (cfc *CloudFoundryClient) createSpace(space string) error {
 }
 
 func (cfc *CloudFoundryClient) deleteSpace(space string) error {
-	args := []string{"create-space", space, "-f"}
+	args := []string{"delete-space", space, "-f"}
 	return cfc.cf(args...).Run()
 }
 
@@ -228,6 +282,7 @@ func (cfc *CloudFoundryClient) cf(args ...string) *exec.Cmd {
 	cmd := exec.Command("cf", args...)
 	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
+	// TODO: Handle per-pull CF_HOME
 	cmd.Env = append(os.Environ(), "CF_COLOR=true")
 
 	return cmd
@@ -235,7 +290,7 @@ func (cfc *CloudFoundryClient) cf(args ...string) *exec.Cmd {
 
 type HTTPError struct {
 	Status  int
-	Message string `json:"omitempty"`
+	Message string `json:",omitempty"`
 }
 
 func writeError(res http.ResponseWriter, status int, message string) {
@@ -269,7 +324,13 @@ func handlePullHook(res http.ResponseWriter, req *http.Request) {
 	}
 
 	handler := PullHandler{
-		client: github.NewClient(&http.Client{}),
+		client: github.NewClient(
+			oauth2.NewClient(oauth2.NoContext,
+				oauth2.StaticTokenSource(
+					&oauth2.Token{AccessToken: os.Getenv("GH_TOKEN")},
+				),
+			),
+		),
 		cfClient: &CloudFoundryClient{
 			api:      os.Getenv("CF_API"),
 			username: os.Getenv("CF_USERNAME"),
@@ -279,9 +340,15 @@ func handlePullHook(res http.ResponseWriter, req *http.Request) {
 
 	switch payload.Action {
 	case "opened", "reopened", "edited":
-		handler.Open(payload)
+		err = handler.Open(payload)
+		if err != nil {
+			writeError(res, http.StatusInternalServerError, "")
+		}
 	case "closed":
-		handler.Close(payload)
+		err = handler.Close(payload)
+		if err != nil {
+			writeError(res, http.StatusInternalServerError, "")
+		}
 	}
 }
 
