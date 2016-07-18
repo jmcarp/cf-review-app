@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -37,18 +39,25 @@ func NewRepoHandler(client *github.Client) *RepoHandler {
 
 // Bind creates a GitHub webhook
 func (rh *RepoHandler) Bind(owner, repo string) (int, error) {
+	// TODO: Pass from config
+	u, err := url.Parse(os.Getenv("URL"))
+	if err != nil {
+		return 0, err
+	}
+	u.Path = path.Join(u.Path, "/hook")
+
 	hook := &github.Hook{
 		Name:   String("web"),
 		Active: Bool(true),
 		Events: []string{"pull_request"},
 		Config: map[string]interface{}{
-			"url":          "",
+			"url":          u.String(),
+			"secret":       os.Getenv("SECRET"),
 			"content-type": "json",
-			"secret":       "",
 		},
 	}
 
-	hook, _, err := rh.client.Repositories.CreateHook(owner, repo, hook)
+	hook, _, err = rh.client.Repositories.CreateHook(owner, repo, hook)
 	if err != nil {
 		return 0, err
 	}
