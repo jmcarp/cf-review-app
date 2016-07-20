@@ -117,7 +117,7 @@ func (rh *RepoHandler) Bind(owner, repo string) (int, error) {
 		Config: map[string]interface{}{
 			"url":          u.String(),
 			"secret":       os.Getenv("HOOK_SECRET"),
-			"content-type": "application/json",
+			"content_type": "application/json",
 		},
 	}
 
@@ -189,6 +189,18 @@ func (ph *PullHandler) Open(payload PullPayload) error {
 
 	space := getSpace(parts[0], parts[1], payload.Number)
 
+	deployment, _, err := ph.client.Repositories.CreateDeployment(
+		parts[0], parts[1],
+		&github.DeploymentRequest{
+			Ref:         String(payload.PullRequest.Head.Sha),
+			Task:        String("deploy:review"),
+			Environment: String("review"),
+		},
+	)
+	if err != nil {
+		return err
+	}
+
 	err = ph.cfClient.Login()
 	err = ph.cfClient.Target(os.Getenv("CF_ORG"))
 	err = ph.cfClient.Create(app, space)
@@ -196,11 +208,13 @@ func (ph *PullHandler) Open(payload PullPayload) error {
 		return err
 	}
 
-	_, _, err = ph.client.Repositories.CreateStatus(
+	// TODO: Mark deploy as failed on error
+	_, _, err = ph.client.Repositories.CreateDeploymentStatus(
 		parts[0], parts[1],
-		payload.PullRequest.Head.Sha,
-		&github.RepoStatus{
+		*deployment.ID,
+		&github.DeploymentStatusRequest{
 			State:       String("success"),
+			TargetURL:   String(""),
 			Description: String("Deployed review app"),
 		},
 	)
@@ -409,11 +423,13 @@ func handlePullHook(res http.ResponseWriter, req *http.Request) {
 	case "opened", "reopened", "edited":
 		err = handler.Open(payload)
 		if err != nil {
+			fmt.Println("ERROR", err)
 			writeError(res, http.StatusInternalServerError, "")
 		}
 	case "closed":
 		err = handler.Close(payload)
 		if err != nil {
+			fmt.Println("ERROR", err)
 			writeError(res, http.StatusInternalServerError, "")
 		}
 	}
