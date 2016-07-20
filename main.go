@@ -12,12 +12,17 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+	_ "github.com/lib/pq"
+
 	"github.com/google/go-github/github"
 	"github.com/gorilla/mux"
 	"golang.org/x/oauth2"
 	"gopkg.in/yaml.v2"
 
 	"github.com/jmcarp/cf-review-app/utils"
+	// "github.com/jmcarp/cf-review-app/models"
 )
 
 func String(s string) *string {
@@ -26,6 +31,65 @@ func String(s string) *string {
 
 func Bool(b bool) *bool {
 	return &b
+}
+
+func clientFromToken(token string) *RepoHandler {
+	return NewRepoHandler(
+		github.NewClient(
+			oauth2.NewClient(oauth2.NoContext,
+				oauth2.StaticTokenSource(
+					&oauth2.Token{AccessToken: token},
+				),
+			),
+		),
+	)
+}
+
+func BindHook(db *gorm.DB, orgId, token, owner, repo string) (Hook, error) {
+	handler := clientFromToken(token)
+
+	hookId, err := handler.Bind(owner, repo)
+	if err != nil {
+		return Hook{}, err
+	}
+
+	hook := Hook{
+		Token:  token,
+		OrgId:  orgId,
+		Owner:  owner,
+		Repo:   repo,
+		HookId: hookId,
+	}
+
+	err = db.Create(&hook).Error
+	if err != nil {
+		handler.Unbind(owner, repo, hookId)
+		return Hook{}, err
+	}
+
+	return hook, nil
+}
+
+func UnbindHook(db *gorm.DB, orgId, owner, repo string) error {
+	hook := Hook{
+		OrgId: orgId,
+		Owner: owner,
+		Repo:  repo,
+	}
+
+	err := db.Where(hook).Find(&hook).Error
+	if err != nil {
+		return err
+	}
+
+	handler := clientFromToken(hook.Token)
+
+	err = handler.Unbind(hook.Owner, hook.Repo, hook.HookId)
+	if err != nil {
+		return err
+	}
+
+	return db.Delete(&hook).Error
 }
 
 type RepoHandler struct {
@@ -52,8 +116,8 @@ func (rh *RepoHandler) Bind(owner, repo string) (int, error) {
 		Events: []string{"pull_request"},
 		Config: map[string]interface{}{
 			"url":          u.String(),
-			"secret":       os.Getenv("SECRET"),
-			"content-type": "json",
+			"secret":       os.Getenv("HOOK_SECRET"),
+			"content-type": "application/json",
 		},
 	}
 
@@ -75,6 +139,7 @@ func (rh *RepoHandler) Unbind(owner, repo string, hookID int) error {
 
 type PullPayload struct {
 	Action      string
+	Number      int
 	PullRequest struct {
 		Head RefPayload
 		Base RefPayload
@@ -86,6 +151,10 @@ type RefPayload struct {
 	Repo struct {
 		FullName string `json:"full_name"`
 	}
+}
+
+func getSpace(owner, repo string, number int) string {
+	return fmt.Sprintf("%s-%s-pull-%d", owner, repo, number)
 }
 
 type PullHandler struct {
@@ -118,9 +187,11 @@ func (ph *PullHandler) Open(payload PullPayload) error {
 	os.Chdir(appPath)
 	defer os.Chdir(here)
 
+	space := getSpace(parts[0], parts[1], payload.Number)
+
 	err = ph.cfClient.Login()
 	err = ph.cfClient.Target(os.Getenv("CF_ORG"))
-	err = ph.cfClient.Create(app)
+	err = ph.cfClient.Create(app, space)
 	if err != nil {
 		return err
 	}
@@ -143,26 +214,13 @@ func (ph *PullHandler) Open(payload PullPayload) error {
 func (ph *PullHandler) Close(payload PullPayload) error {
 	parts := strings.Split(payload.PullRequest.Head.Repo.FullName, "/")
 
-	path, err := ph.download(payload)
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(path)
+	space := getSpace(parts[0], parts[1], payload.Number)
 
-	dir := fmt.Sprintf("%s-%s-%s", parts[0], parts[1], payload.PullRequest.Head.Sha[:7])
-	appPath := filepath.Join(path, dir)
-	appYmlPath := filepath.Join(appPath, "app.yml")
-
-	app, err := ph.getAppYml(appYmlPath)
-	if err != nil {
-		return err
-	}
-
-	err = ph.cfClient.Login()
+	err := ph.cfClient.Login()
 	err = ph.cfClient.Target(os.Getenv("CF_ORG"))
-	err = ph.cfClient.Delete(app)
+	err = ph.cfClient.Delete(space)
 
-	return nil
+	return err
 }
 
 func (ph *PullHandler) getUrl(user, repo, sha string) (string, error) {
@@ -214,7 +272,6 @@ func (ph *PullHandler) getAppYml(path string) (App, error) {
 type App struct {
 	Name     string
 	Manifest string
-	Space    string
 }
 
 type CloudFoundryClient struct {
@@ -239,8 +296,8 @@ func (cfc *CloudFoundryClient) Target(org string) error {
 	return cfc.cf(args...).Run()
 }
 
-func (cfc *CloudFoundryClient) Create(app App) error {
-	err := cfc.createSpace(app.Space)
+func (cfc *CloudFoundryClient) Create(app App, space string) error {
+	err := cfc.createSpace(space)
 	if err != nil {
 		return err
 	}
@@ -258,8 +315,8 @@ func (cfc *CloudFoundryClient) Create(app App) error {
 	return nil
 }
 
-func (cfc *CloudFoundryClient) Delete(app App) error {
-	return cfc.deleteSpace(app.Space)
+func (cfc *CloudFoundryClient) Delete(space string) error {
+	return cfc.deleteSpace(space)
 }
 
 func (cfc *CloudFoundryClient) createSpace(space string) error {
@@ -314,14 +371,15 @@ func writeError(res http.ResponseWriter, status int, message string) {
 func handlePullHook(res http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		writeError(res, http.StatusInternalServerError, "Invalid payload")
+		writeError(res, http.StatusBadRequest, "Invalid payload")
 		return
 	}
 
-	var payload PullPayload
+	payload := PullPayload{}
 	err = json.Unmarshal(body, &payload)
 	if err != nil {
-		writeError(res, http.StatusInternalServerError, "Invalid payload")
+		writeError(res, http.StatusBadRequest, "Invalid payload")
+		fmt.Println("ERROR", err)
 		return
 	}
 
@@ -366,3 +424,14 @@ func main() {
 	router.HandleFunc("/hook", handlePullHook).Methods("POST")
 	http.ListenAndServe(":8080", router)
 }
+
+func Connect(databaseUrl string) (*gorm.DB, error) {
+	return gorm.Open("postgres", databaseUrl)
+}
+
+// func main() {
+// 	db, _ := Connect(os.Getenv("DATABASE_URL"))
+// 	db.AutoMigrate(&Hook{})
+// 	hook, err := BindHook(db, os.Getenv("CF_ORG"), os.Getenv("GH_TOKEN"), os.Getenv("GH_OWNER"), os.Getenv("GH_REPO"))
+// 	fmt.Println(hook, err)
+// }
