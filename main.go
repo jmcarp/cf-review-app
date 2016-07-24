@@ -293,6 +293,15 @@ func (ph *PullHandler) getAppYml(path string) (App, error) {
 type App struct {
 	Name     string
 	Manifest string
+	Services []Service
+}
+
+type Service struct {
+	Name    string
+	Service string
+	Plan    string
+	Tags    []string
+	Config  map[string]interface{}
 }
 
 type CloudFoundryClient struct {
@@ -323,7 +332,7 @@ func (cfc *CloudFoundryClient) Create(app App, space string) error {
 		return err
 	}
 
-	err = cfc.createServices()
+	err = cfc.createServices(app)
 	if err != nil {
 		return err
 	}
@@ -356,8 +365,29 @@ func (cfc *CloudFoundryClient) deleteSpace(space string) error {
 	return cfc.cf(args...).Run()
 }
 
-func (cfc *CloudFoundryClient) createServices() error {
+func (cfc *CloudFoundryClient) createServices(app App) error {
+	for _, service := range app.Services {
+		err := cfc.createService(service)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func (cfc *CloudFoundryClient) createService(service Service) error {
+	args := []string{"create-service", service.Service, service.Plan, service.Name}
+	if len(service.Tags) > 0 {
+		args = append(args, "-t", strings.Join(service.Tags, ","))
+	}
+	if len(service.Config) > 0 {
+		config, err := json.Marshal(service.Config)
+		if err != nil {
+			return err
+		}
+		args = append(args, "-c", string(config))
+	}
+	return cfc.cf(args...).Run()
 }
 
 func (cfc *CloudFoundryClient) createApp(app, manifest string) error {
@@ -426,7 +456,7 @@ func handlePullHook(res http.ResponseWriter, req *http.Request) {
 	}
 
 	switch payload.Action {
-	case "opened", "reopened", "edited":
+	case "opened", "reopened", "synchronize":
 		err = handler.Open(payload)
 		if err != nil {
 			writeError(res, http.StatusInternalServerError, "")
