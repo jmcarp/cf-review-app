@@ -201,6 +201,13 @@ func (ph *PullHandler) Open(payload PullPayload) error {
 		return err
 	}
 
+	dest := filepath.Join(appPath, fmt.Sprintf("manifest-review-%s.yml", payload.PullRequest.Head.Sha))
+	err = utils.MakeManifest(app.Name, app.Manifest, dest)
+	if err != nil {
+		return err
+	}
+	app.Manifest = dest
+
 	err = ph.cfClient.Login()
 	err = ph.cfClient.Target(os.Getenv("CF_ORG"))
 	err = ph.cfClient.Create(app, space)
@@ -393,7 +400,6 @@ func handlePullHook(res http.ResponseWriter, req *http.Request) {
 	err = json.Unmarshal(body, &payload)
 	if err != nil {
 		writeError(res, http.StatusBadRequest, "Invalid payload")
-		fmt.Println("ERROR", err)
 		return
 	}
 
@@ -423,13 +429,11 @@ func handlePullHook(res http.ResponseWriter, req *http.Request) {
 	case "opened", "reopened", "edited":
 		err = handler.Open(payload)
 		if err != nil {
-			fmt.Println("ERROR", err)
 			writeError(res, http.StatusInternalServerError, "")
 		}
 	case "closed":
 		err = handler.Close(payload)
 		if err != nil {
-			fmt.Println("ERROR", err)
 			writeError(res, http.StatusInternalServerError, "")
 		}
 	}
