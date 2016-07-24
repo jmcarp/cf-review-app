@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -11,6 +13,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -387,7 +390,41 @@ func (cfc *CloudFoundryClient) createService(service Service) error {
 		}
 		args = append(args, "-c", string(config))
 	}
-	return cfc.cf(args...).Run()
+
+	err := cfc.cf(args...).Run()
+	if err != nil {
+		return err
+	}
+
+	return cfc.checkService(service, 30)
+}
+
+func (cfc *CloudFoundryClient) checkService(service Service, timeout int) error {
+	args := []string{"service", service.Name}
+	elapsed := 0
+
+	for {
+		var buf bytes.Buffer
+		cmd := cfc.cf(args...)
+		cmd.Stdout = io.MultiWriter(os.Stdout, &buf)
+		err := cmd.Run()
+
+		if err == nil {
+			output := buf.String()
+			for _, line := range strings.Split(output, "\n") {
+				if line == "Status: create succeeded" {
+					return nil
+				}
+			}
+		}
+
+		elapsed += 5
+		if elapsed > timeout {
+			return fmt.Errorf("Service %s incomplete", service.Name)
+		}
+
+		time.Sleep(5 * time.Second)
+	}
 }
 
 func (cfc *CloudFoundryClient) createApp(app, manifest string) error {
@@ -397,6 +434,7 @@ func (cfc *CloudFoundryClient) createApp(app, manifest string) error {
 
 func (cfc *CloudFoundryClient) cf(args ...string) *exec.Cmd {
 	cmd := exec.Command("cf", args...)
+
 	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
 	// TODO: Handle per-pull CF_HOME
