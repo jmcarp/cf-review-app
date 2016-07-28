@@ -16,6 +16,7 @@ import (
 
 	"github.com/jmcarp/cf-review-app/handlers"
 	"github.com/jmcarp/cf-review-app/models"
+	"github.com/jmcarp/cf-review-app/utils"
 	"github.com/jmcarp/cf-review-app/webhooks"
 )
 
@@ -34,8 +35,11 @@ func clientFromToken(token string) *webhooks.RepoHandler {
 func BindHook(db *gorm.DB, orgId, instanceId, token, owner, repo string) (models.Hook, error) {
 	handler := clientFromToken(token)
 
-	// https://elithrar.github.io/article/generating-secure-random-numbers-crypto-rand/
-	secret := "shh"
+	secret, err := utils.SecureRandom(32)
+	if err != nil {
+		return models.Hook{}, err
+	}
+
 	hookId, err := handler.Bind(owner, repo, instanceId, secret)
 	if err != nil {
 		return models.Hook{}, err
