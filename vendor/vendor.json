@@ -1,0 +1,256 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"path": "appengine",
+			"revision": ""
+		},
+		{
+			"path": "appengine_internal",
+			"revision": ""
+		},
+		{
+			"path": "appengine_internal/base",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "c6kmkiVQI2cr0Rjk8hfyLQJw678=",
+			"path": "code.cloudfoundry.org/lager",
+			"revision": "62951a8009ab331bb21dc418074fa54e66eb9b6a",
+			"revisionTime": "2016-07-05T18:53:22Z"
+		},
+		{
+			"path": "context",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "CPDjwrdWuOevgB2GKoGXrAUXIAA=",
+			"path": "github.com/cloudfoundry/cli/cf/errors",
+			"revision": "ae4df9939e7facf4cc7c9522c57b035d2c00651d",
+			"revisionTime": "2016-07-29T22:54:44Z"
+		},
+		{
+			"checksumSHA1": "Fl/rxvZl8anblFSDN82Js4lAtz4=",
+			"path": "github.com/cloudfoundry/cli/cf/formatters",
+			"revision": "ae4df9939e7facf4cc7c9522c57b035d2c00651d",
+			"revisionTime": "2016-07-29T22:54:44Z"
+		},
+		{
+			"checksumSHA1": "ZNaDRcBtl5Z8AtntJY8nEOlMxbw=",
+			"path": "github.com/cloudfoundry/cli/cf/i18n",
+			"revision": "ae4df9939e7facf4cc7c9522c57b035d2c00651d",
+			"revisionTime": "2016-07-29T22:54:44Z"
+		},
+		{
+			"checksumSHA1": "SE7/3lZ6In0MaciIqB9uPqV5Z8I=",
+			"path": "github.com/cloudfoundry/cli/cf/manifest",
+			"revision": "ae4df9939e7facf4cc7c9522c57b035d2c00651d",
+			"revisionTime": "2016-07-29T22:54:44Z"
+		},
+		{
+			"checksumSHA1": "l8gf38qgDTrPtiTmS9apYG/Ou4k=",
+			"path": "github.com/cloudfoundry/cli/cf/models",
+			"revision": "ae4df9939e7facf4cc7c9522c57b035d2c00651d",
+			"revisionTime": "2016-07-29T22:54:44Z"
+		},
+		{
+			"checksumSHA1": "bcKZm0UI+7eiFOT6p6uCCZzbSf0=",
+			"path": "github.com/cloudfoundry/cli/cf/resources",
+			"revision": "ae4df9939e7facf4cc7c9522c57b035d2c00651d",
+			"revisionTime": "2016-07-29T22:54:44Z"
+		},
+		{
+			"checksumSHA1": "hYn69XaUxfShwv5TUHHrT3Eg3Vs=",
+			"path": "github.com/cloudfoundry/cli/utils/generic",
+			"revision": "ae4df9939e7facf4cc7c9522c57b035d2c00651d",
+			"revisionTime": "2016-07-29T22:54:44Z"
+		},
+		{
+			"checksumSHA1": "mnGF5Vje6jAJ2/6YwjWBlTfoFQM=",
+			"path": "github.com/cloudfoundry/cli/utils/words",
+			"revision": "ae4df9939e7facf4cc7c9522c57b035d2c00651d",
+			"revisionTime": "2016-07-29T22:54:44Z"
+		},
+		{
+			"checksumSHA1": "hRESX/ppeOLcabIYB6/XD6gfsVA=",
+			"path": "github.com/cloudfoundry/cli/utils/words/generator",
+			"revision": "ae4df9939e7facf4cc7c9522c57b035d2c00651d",
+			"revisionTime": "2016-07-29T22:54:44Z"
+		},
+		{
+			"checksumSHA1": "5MVpi9U1WCrzZ1VMMn61Fc+trE0=",
+			"path": "github.com/golang/protobuf/proto",
+			"revision": "c3cefd437628a0b7d31b34fe44b3a7a540e98527",
+			"revisionTime": "2016-07-27T17:26:17Z"
+		},
+		{
+			"checksumSHA1": "Q4mAxu3ShaRGvgvql1lH8yUc7OQ=",
+			"path": "github.com/google/go-github/github",
+			"revision": "331e3f619021723128623d4db765a81ba1e1f81e",
+			"revisionTime": "2016-07-29T02:42:56Z"
+		},
+		{
+			"checksumSHA1": "yyAzHoiVLu+xywYI2BDyRq6sOqE=",
+			"path": "github.com/google/go-querystring/query",
+			"revision": "9235644dd9e52eeae6fa48efd539fdc351a0af53",
+			"revisionTime": "2016-03-11T01:20:12Z"
+		},
+		{
+			"checksumSHA1": "iIUYZyoanCQQTUaWsu8b+iOSPt4=",
+			"path": "github.com/gorilla/context",
+			"revision": "aed02d124ae4a0e94fea4541c8effd05bf0c8296",
+			"revisionTime": "2016-05-25T20:33:19Z"
+		},
+		{
+			"checksumSHA1": "ntQtwxnIbkwPoh6uQYZ4j8PcaVk=",
+			"path": "github.com/gorilla/mux",
+			"revision": "a49d62f618e6dc4a7a7d1f0ad69744a158c21f23",
+			"revisionTime": "2016-07-27T01:54:17Z"
+		},
+		{
+			"checksumSHA1": "iJZgtJOFkOAD9UnFASfS+HZKHuM=",
+			"path": "github.com/jinzhu/gorm",
+			"revision": "a646b13548ec0aa812fe805b2780f460dd2771b6",
+			"revisionTime": "2016-07-19T23:36:53Z"
+		},
+		{
+			"checksumSHA1": "QmQW8snORAputB7/1jFXpsOZa8A=",
+			"path": "github.com/jinzhu/gorm/dialects/postgres",
+			"revision": "a646b13548ec0aa812fe805b2780f460dd2771b6",
+			"revisionTime": "2016-07-19T23:36:53Z"
+		},
+		{
+			"checksumSHA1": "+T2BNoq6tm0FUIvtGPhxnz56Fu0=",
+			"path": "github.com/jinzhu/inflection",
+			"revision": "8f4d3a0d04ce0b7c0cf3126fb98524246d00d102",
+			"revisionTime": "2016-06-26T22:27:13Z"
+		},
+		{
+			"checksumSHA1": "QK3MNUdQwUBuznCHZcPijU/3DyI=",
+			"path": "github.com/lib/pq",
+			"revision": "4dd446efc17690bc53e154025146f73203b18309",
+			"revisionTime": "2016-06-23T22:06:37Z"
+		},
+		{
+			"checksumSHA1": "jaCQF1par6Jl8g+V2Cgp0n/0wSc=",
+			"path": "github.com/lib/pq/hstore",
+			"revision": "4dd446efc17690bc53e154025146f73203b18309",
+			"revisionTime": "2016-06-23T22:06:37Z"
+		},
+		{
+			"checksumSHA1": "xppHi82MLqVx1eyQmbhTesAEjx8=",
+			"path": "github.com/lib/pq/oid",
+			"revision": "4dd446efc17690bc53e154025146f73203b18309",
+			"revisionTime": "2016-06-23T22:06:37Z"
+		},
+		{
+			"checksumSHA1": "AIUSNZCXulAwAET0RL4V+HWbBfE=",
+			"origin": "github.com/cloudfoundry/cli/vendor/github.com/nicksnyder/go-i18n/i18n",
+			"path": "github.com/nicksnyder/go-i18n/i18n",
+			"revision": "ae4df9939e7facf4cc7c9522c57b035d2c00651d",
+			"revisionTime": "2016-07-29T22:54:44Z"
+		},
+		{
+			"checksumSHA1": "FXzkR+JeFjSwQSZgq8Qrkv/t63k=",
+			"origin": "github.com/cloudfoundry/cli/vendor/github.com/nicksnyder/go-i18n/i18n/bundle",
+			"path": "github.com/nicksnyder/go-i18n/i18n/bundle",
+			"revision": "ae4df9939e7facf4cc7c9522c57b035d2c00651d",
+			"revisionTime": "2016-07-29T22:54:44Z"
+		},
+		{
+			"checksumSHA1": "+XOg99I1zdmBRUb04ZswvzQ2WS0=",
+			"origin": "github.com/cloudfoundry/cli/vendor/github.com/nicksnyder/go-i18n/i18n/language",
+			"path": "github.com/nicksnyder/go-i18n/i18n/language",
+			"revision": "ae4df9939e7facf4cc7c9522c57b035d2c00651d",
+			"revisionTime": "2016-07-29T22:54:44Z"
+		},
+		{
+			"checksumSHA1": "nhlpSPeAP6jMGAuLPM2xflAZTlo=",
+			"origin": "github.com/cloudfoundry/cli/vendor/github.com/nicksnyder/go-i18n/i18n/translation",
+			"path": "github.com/nicksnyder/go-i18n/i18n/translation",
+			"revision": "ae4df9939e7facf4cc7c9522c57b035d2c00651d",
+			"revisionTime": "2016-07-29T22:54:44Z"
+		},
+		{
+			"checksumSHA1": "tuf7qIQj4ZpbTQ6UjhGXPLmJAyw=",
+			"path": "github.com/pivotal-cf/brokerapi",
+			"revision": "d4e58a888cb4f7457510df33541db06e64e6f5d4",
+			"revisionTime": "2016-07-29T15:15:55Z"
+		},
+		{
+			"checksumSHA1": "4yHEcDRxN5sqr5UDFs3qr0B4lwA=",
+			"path": "github.com/pivotal-cf/brokerapi/auth",
+			"revision": "d4e58a888cb4f7457510df33541db06e64e6f5d4",
+			"revisionTime": "2016-07-29T15:15:55Z"
+		},
+		{
+			"checksumSHA1": "9jjO5GjLa0XF/nfWihF02RoH4qc=",
+			"path": "golang.org/x/net/context",
+			"revision": "6a513affb38dc9788b449d59ffed099b8de18fa0",
+			"revisionTime": "2016-07-26T08:19:14Z"
+		},
+		{
+			"checksumSHA1": "8GUYZXntrAzpG1cThk8/TtR3kj4=",
+			"path": "golang.org/x/oauth2",
+			"revision": "1364adb2c63445016c5ed4518fc71f6a3cda6169",
+			"revisionTime": "2016-07-21T17:18:24Z"
+		},
+		{
+			"checksumSHA1": "D3v/aqfB9swlaZcSksCoF+lbOqo=",
+			"path": "golang.org/x/oauth2/internal",
+			"revision": "1364adb2c63445016c5ed4518fc71f6a3cda6169",
+			"revisionTime": "2016-07-21T17:18:24Z"
+		},
+		{
+			"checksumSHA1": "G9Xp1ScdsfcKsw+PcWunivRRP3o=",
+			"path": "google.golang.org/appengine/internal",
+			"revision": "267c27e7492265b84fc6719503b14a1e17975d79",
+			"revisionTime": "2016-06-21T05:59:22Z"
+		},
+		{
+			"checksumSHA1": "TsNO8P0xUlLNyh3Ic/tzSp/fDWM=",
+			"path": "google.golang.org/appengine/internal/base",
+			"revision": "267c27e7492265b84fc6719503b14a1e17975d79",
+			"revisionTime": "2016-06-21T05:59:22Z"
+		},
+		{
+			"checksumSHA1": "5QsV5oLGSfKZqTCVXP6NRz5T4Tw=",
+			"path": "google.golang.org/appengine/internal/datastore",
+			"revision": "267c27e7492265b84fc6719503b14a1e17975d79",
+			"revisionTime": "2016-06-21T05:59:22Z"
+		},
+		{
+			"checksumSHA1": "Gep2T9zmVYV8qZfK2gu3zrmG6QE=",
+			"path": "google.golang.org/appengine/internal/log",
+			"revision": "267c27e7492265b84fc6719503b14a1e17975d79",
+			"revisionTime": "2016-06-21T05:59:22Z"
+		},
+		{
+			"checksumSHA1": "a1XY7rz3BieOVqVI2Et6rKiwQCk=",
+			"path": "google.golang.org/appengine/internal/remote_api",
+			"revision": "267c27e7492265b84fc6719503b14a1e17975d79",
+			"revisionTime": "2016-06-21T05:59:22Z"
+		},
+		{
+			"checksumSHA1": "QtAbHtHmDzcf6vOV9eqlCpKgjiw=",
+			"path": "google.golang.org/appengine/internal/urlfetch",
+			"revision": "267c27e7492265b84fc6719503b14a1e17975d79",
+			"revisionTime": "2016-06-21T05:59:22Z"
+		},
+		{
+			"checksumSHA1": "akOV9pYnCbcPA8wJUutSQVibdyg=",
+			"path": "google.golang.org/appengine/urlfetch",
+			"revision": "267c27e7492265b84fc6719503b14a1e17975d79",
+			"revisionTime": "2016-06-21T05:59:22Z"
+		},
+		{
+			"checksumSHA1": "pXfFwEJEuUhEK/f8Aei5OZFgfqY=",
+			"origin": "github.com/cloudfoundry/cli/vendor/gopkg.in/yaml.v2",
+			"path": "gopkg.in/yaml.v2",
+			"revision": "ae4df9939e7facf4cc7c9522c57b035d2c00651d",
+			"revisionTime": "2016-07-29T22:54:44Z"
+		}
+	],
+	"rootPath": "github.com/jmcarp/cf-review-app"
+}
