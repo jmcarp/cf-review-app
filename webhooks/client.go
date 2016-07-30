@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/google/go-github/github"
+	"golang.org/x/oauth2"
 	"gopkg.in/yaml.v2"
 
 	"github.com/jmcarp/cf-review-app/cloudfoundry"
@@ -25,23 +26,36 @@ func Bool(b bool) *bool {
 	return &b
 }
 
-type RepoHandler struct {
+type WebhookClient interface {
+	Bind(owner, repo, instanceID, secret string) (int, error)
+	Unbind(owner, repo string, hookID int) error
+}
+
+type Client struct {
 	client *github.Client
 }
 
-// NewRepoHandler creates a new RepoHandler
-func NewRepoHandler(client *github.Client) *RepoHandler {
-	return &RepoHandler{client}
+// NewGithubWebhookClient creates a new GithubWebhookClient
+func NewClient(token string) WebhookClient {
+	client := github.NewClient(
+		oauth2.NewClient(
+			oauth2.NoContext,
+			oauth2.StaticTokenSource(
+				&oauth2.Token{AccessToken: token},
+			),
+		),
+	)
+	return &Client{client: client}
 }
 
 // Bind creates a GitHub webhook
-func (rh *RepoHandler) Bind(owner, repo, instance, secret string) (int, error) {
+func (c *Client) Bind(owner, repo, instanceID, secret string) (int, error) {
 	// TODO: Pass from config
 	u, err := url.Parse(os.Getenv("URL"))
 	if err != nil {
 		return 0, err
 	}
-	u.Path = path.Join(u.Path, "hook", instance)
+	u.Path = path.Join(u.Path, "hook", instanceID)
 
 	hook := &github.Hook{
 		Name:   String("web"),
@@ -54,7 +68,7 @@ func (rh *RepoHandler) Bind(owner, repo, instance, secret string) (int, error) {
 		},
 	}
 
-	hook, _, err = rh.client.Repositories.CreateHook(owner, repo, hook)
+	hook, _, err = c.client.Repositories.CreateHook(owner, repo, hook)
 	if err != nil {
 		return 0, err
 	}
@@ -63,8 +77,8 @@ func (rh *RepoHandler) Bind(owner, repo, instance, secret string) (int, error) {
 }
 
 // Unbind deletes a GitHub webhook
-func (rh *RepoHandler) Unbind(owner, repo string, hookID int) error {
-	_, err := rh.client.Repositories.DeleteHook(owner, repo, hookID)
+func (c *Client) Unbind(owner, repo string, hookID int) error {
+	_, err := c.client.Repositories.DeleteHook(owner, repo, hookID)
 	return err
 }
 

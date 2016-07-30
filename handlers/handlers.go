@@ -41,7 +41,7 @@ func (h *HookHandler) Handle(res http.ResponseWriter, req *http.Request) {
 
 	hook := models.Hook{}
 	result := h.db.Where(
-		models.Hook{InstanceId: mux.Vars(req)["instance"]},
+		models.Hook{InstanceID: mux.Vars(req)["instance"]},
 	).Find(&hook)
 	if result.RecordNotFound() {
 		writeError(res, http.StatusNotFound, "")

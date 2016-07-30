@@ -4,11 +4,11 @@ type Hook struct {
 	ID         uint   `gorm:"primary_key"`
 	Token      string `gorm:"not null"`
 	Secret     string `gorm:"not null"`
-	InstanceId string `gorm:"not null;unique_index"`
-	OrgId      string `gorm:"not null;unique_index:idx_org_owner_repo"`
+	InstanceID string `gorm:"not null;unique_index"`
+	OrgID      string `gorm:"not null;unique_index:idx_org_owner_repo"`
 	Owner      string `gorm:"not null;unique_index:idx_org_owner_repo"`
 	Repo       string `gorm:"not null;unique_index:idx_org_owner_repo"`
-	HookId     int
+	HookID     int
 }
 
 type App struct {
