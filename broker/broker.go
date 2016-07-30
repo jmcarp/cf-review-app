@@ -45,7 +45,7 @@ func New(m webhooks.HookManager) ReviewBroker {
 	return ReviewBroker{hookManager: m}
 }
 
-func (*ReviewBroker) Services() []brokerapi.Service {
+func (b *ReviewBroker) Services() []brokerapi.Service {
 	service := brokerapi.Service{}
 
 	buf, err := ioutil.ReadFile("./catalog.json")

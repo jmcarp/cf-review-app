@@ -1,0 +1,20 @@
+{
+  "id": "7d55a49a-9145-40c9-9c98-0bafc347dafa",
+  "name": "review-app",
+  "description": "Review App Service",
+  "bindable": false,
+  "metadata": {
+    "displayName": "review-app"
+  },
+  "plans": [
+    {
+      "id": "4dfe0a5d-cb42-401f-b8e5-2cb6237abc4f",
+      "name": "review-app",
+      "description": "Review App",
+      "free": true,
+      "metadata": {
+        "displayName": "review-app"
+      }
+    }
+  ]
+}
