@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"os"
 
 	"github.com/google/go-github/github"
 	"github.com/gorilla/mux"
@@ -12,17 +11,19 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/jmcarp/cf-review-app/cloudfoundry"
+	"github.com/jmcarp/cf-review-app/config"
 	"github.com/jmcarp/cf-review-app/models"
 	"github.com/jmcarp/cf-review-app/utils"
 	"github.com/jmcarp/cf-review-app/webhooks"
 )
 
 type HookHandler struct {
-	db *gorm.DB
+	db       *gorm.DB
+	settings config.Settings
 }
 
-func NewHookHandler(db *gorm.DB) HookHandler {
-	return HookHandler{db: db}
+func NewHookHandler(db *gorm.DB, settings config.Settings) HookHandler {
+	return HookHandler{db: db, settings: settings}
 }
 
 func (h *HookHandler) Handle(res http.ResponseWriter, req *http.Request) {
@@ -59,13 +60,13 @@ func (h *HookHandler) Handle(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = handleHook(payload, hook)
+	err = h.handleHook(payload, hook)
 	if err != nil {
 		writeError(res, http.StatusInternalServerError, "")
 	}
 }
 
-func handleHook(payload webhooks.PullPayload, hook models.Hook) error {
+func (h *HookHandler) handleHook(payload webhooks.PullPayload, hook models.Hook) error {
 	handler := webhooks.NewPullHandler(
 		github.NewClient(
 			oauth2.NewClient(oauth2.NoContext,
@@ -75,17 +76,17 @@ func handleHook(payload webhooks.PullPayload, hook models.Hook) error {
 			),
 		),
 		cloudfoundry.NewCloudFoundry(
-			os.Getenv("CF_API"),
-			os.Getenv("CF_USERNAME"),
-			os.Getenv("CF_PASSWORD"),
+			h.settings.CFURL,
+			h.settings.CFUsername,
+			h.settings.CFPassword,
 		),
 	)
 
 	switch payload.Action {
 	case "opened", "reopened", "synchronize":
-		return handler.Open(payload)
+		return handler.Open(hook.OrgID, payload)
 	case "closed":
-		return handler.Close(payload)
+		return handler.Close(hook.OrgID, payload)
 	}
 	return nil
 }

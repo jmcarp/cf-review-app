@@ -2,13 +2,8 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
-
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
-	_ "github.com/lib/pq"
 
 	"github.com/gorilla/mux"
 
@@ -16,39 +11,41 @@ import (
 	"github.com/pivotal-cf/brokerapi"
 
 	"github.com/jmcarp/cf-review-app/broker"
+	"github.com/jmcarp/cf-review-app/config"
 	"github.com/jmcarp/cf-review-app/handlers"
 	"github.com/jmcarp/cf-review-app/webhooks"
 )
-
-func Connect(databaseUrl string) (*gorm.DB, error) {
-	return gorm.Open("postgres", databaseUrl)
-}
 
 func main() {
 	logger := lager.NewLogger("review-broker")
 	logger.RegisterSink(lager.NewWriterSink(os.Stderr, lager.INFO))
 
-	db, err := Connect(os.Getenv("DATABASE_URL"))
+	settings, err := config.NewSettings()
 	if err != nil {
-		log.Fatal("Failed to connect to database")
+		logger.Fatal("settings", err)
+	}
+
+	db, err := config.Connect(settings.DatabaseURL)
+	if err != nil {
+		logger.Fatal("connect", err)
 	}
 
 	credentials := brokerapi.BrokerCredentials{
-		Username: os.Getenv("BROKER_USER"),
-		Password: os.Getenv("BROKER_PASS"),
+		Username: settings.BrokerUsername,
+		Password: settings.BrokerPassword,
 	}
 
 	// Attach webhook routes
 	router := mux.NewRouter()
-	handler := handlers.NewHookHandler(db)
+	handler := handlers.NewHookHandler(db, settings)
 	router.HandleFunc("/hook/{instance}", handler.Handle).Methods("POST")
 	http.Handle("/hook/", router)
 
 	// Attach service broker routes
-	manager := webhooks.NewManager(db, webhooks.NewClient)
+	manager := webhooks.NewManager(db, settings, webhooks.NewClient)
 	broker := broker.New(manager)
 	brokerAPI := brokerapi.New(&broker, logger, credentials)
 	http.Handle("/", brokerAPI)
 
-	http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("PORT")), nil)
+	http.ListenAndServe(fmt.Sprintf(":%s", settings.Port), nil)
 }

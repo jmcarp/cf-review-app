@@ -3,6 +3,7 @@ package webhooks
 import (
 	"github.com/jinzhu/gorm"
 
+	"github.com/jmcarp/cf-review-app/config"
 	"github.com/jmcarp/cf-review-app/models"
 	"github.com/jmcarp/cf-review-app/utils"
 )
@@ -15,11 +16,16 @@ type HookManager interface {
 
 type Manager struct {
 	db            *gorm.DB
-	clientFactory func(token string) WebhookClient
+	settings      config.Settings
+	clientFactory func(token string, settings config.Settings) WebhookClient
 }
 
-func NewManager(db *gorm.DB, factory func(token string) WebhookClient) HookManager {
-	return &Manager{db: db, clientFactory: factory}
+func NewManager(db *gorm.DB, settings config.Settings, factory func(token string, settings config.Settings) WebhookClient) HookManager {
+	return &Manager{
+		db:            db,
+		settings:      settings,
+		clientFactory: factory,
+	}
 }
 
 func (m *Manager) Get(instanceID string) (models.Hook, error) {
@@ -29,7 +35,7 @@ func (m *Manager) Get(instanceID string) (models.Hook, error) {
 }
 
 func (m *Manager) Create(orgID, instanceID, token, owner, repo string) (models.Hook, error) {
-	client := m.clientFactory(token)
+	client := m.clientFactory(token, m.settings)
 
 	secret, err := utils.SecureRandom(32)
 	if err != nil {
@@ -67,7 +73,7 @@ func (m *Manager) Delete(instanceID string) error {
 		return err
 	}
 
-	client := m.clientFactory(hook.Token)
+	client := m.clientFactory(hook.Token, m.settings)
 
 	err = client.Unbind(hook.Owner, hook.Repo, hook.HookID)
 	if err != nil {

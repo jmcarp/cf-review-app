@@ -14,6 +14,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/jmcarp/cf-review-app/cloudfoundry"
+	"github.com/jmcarp/cf-review-app/config"
 	"github.com/jmcarp/cf-review-app/models"
 	"github.com/jmcarp/cf-review-app/utils"
 )
@@ -32,11 +33,12 @@ type WebhookClient interface {
 }
 
 type Client struct {
-	client *github.Client
+	client   *github.Client
+	settings config.Settings
 }
 
 // NewGithubWebhookClient creates a new GithubWebhookClient
-func NewClient(token string) WebhookClient {
+func NewClient(token string, settings config.Settings) WebhookClient {
 	client := github.NewClient(
 		oauth2.NewClient(
 			oauth2.NoContext,
@@ -45,13 +47,12 @@ func NewClient(token string) WebhookClient {
 			),
 		),
 	)
-	return &Client{client: client}
+	return &Client{client: client, settings: settings}
 }
 
 // Bind creates a GitHub webhook
 func (c *Client) Bind(owner, repo, instanceID, secret string) (int, error) {
-	// TODO: Pass from config
-	u, err := url.Parse(os.Getenv("URL"))
+	u, err := url.Parse(c.settings.BaseURL)
 	if err != nil {
 		return 0, err
 	}
@@ -119,11 +120,11 @@ type PullHandler struct {
 	cfClient *cloudfoundry.CloudFoundry
 }
 
-func NewPullHandler(client *github.Client, cfClient *cloudfoundry.CloudFoundry) PullHandler {
-	return PullHandler{client: client, cfClient: cfClient}
+func NewPullHandler(client *github.Client, cfClient *cloudfoundry.CloudFoundry) *PullHandler {
+	return &PullHandler{client: client, cfClient: cfClient}
 }
 
-func (ph *PullHandler) Open(payload PullPayload) error {
+func (ph *PullHandler) Open(orgID string, payload PullPayload) error {
 	sha := payload.PullRequest.Head.Sha
 
 	path, err := ph.download(payload)
@@ -170,7 +171,7 @@ func (ph *PullHandler) Open(payload PullPayload) error {
 	app.Manifest = dest
 
 	err = ph.cfClient.Login()
-	err = ph.cfClient.Target(os.Getenv("CF_ORG"))
+	err = ph.cfClient.Target(orgID)
 	err = ph.cfClient.Create(app, space)
 	if err != nil {
 		return err
@@ -193,11 +194,11 @@ func (ph *PullHandler) Open(payload PullPayload) error {
 	return nil
 }
 
-func (ph *PullHandler) Close(payload PullPayload) error {
+func (ph *PullHandler) Close(orgID string, payload PullPayload) error {
 	space := getSpace(payload.Owner(), payload.Repo(), payload.Number)
 
 	err := ph.cfClient.Login()
-	err = ph.cfClient.Target(os.Getenv("CF_ORG"))
+	err = ph.cfClient.Target(orgID)
 	err = ph.cfClient.Delete(space)
 
 	return err
