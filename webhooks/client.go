@@ -96,8 +96,9 @@ type PullPayload struct {
 type RefPayload struct {
 	Sha  string
 	Repo struct {
-		Name  string
-		Owner struct {
+		Name     string
+		FullName string `json:"full_name"`
+		Owner    struct {
 			Login string
 		}
 	}
@@ -109,6 +110,10 @@ func (p PullPayload) Owner() string {
 
 func (p PullPayload) Repo() string {
 	return p.PullRequest.Base.Repo.Name
+}
+
+func (p PullPayload) IsFork() bool {
+	return p.PullRequest.Base.Repo.FullName != p.PullRequest.Head.Repo.FullName
 }
 
 func getSpace(owner, repo string, number int) string {

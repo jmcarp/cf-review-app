@@ -60,6 +60,11 @@ func (h *HookHandler) Handle(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if payload.IsFork() {
+		writeError(res, http.StatusBadRequest, "Cannot deploy from fork")
+		return
+	}
+
 	err = h.handleHook(payload, hook)
 	if err != nil {
 		writeError(res, http.StatusInternalServerError, "")
