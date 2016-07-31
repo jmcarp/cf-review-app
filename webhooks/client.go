@@ -37,7 +37,7 @@ type Client struct {
 	settings config.Settings
 }
 
-// NewGithubWebhookClient creates a new GithubWebhookClient
+// NewClient creates a new Client
 func NewClient(token string, settings config.Settings) WebhookClient {
 	client := github.NewClient(
 		oauth2.NewClient(
@@ -177,26 +177,28 @@ func (ph *PullHandler) Open(orgID string, payload PullPayload) error {
 
 	err = ph.cfClient.Login()
 	err = ph.cfClient.Target(orgID)
-	err = ph.cfClient.Create(app, space)
+	route, err := ph.cfClient.Create(app, space)
 	if err != nil {
+		ph.client.Repositories.CreateDeploymentStatus(
+			payload.Owner(), payload.Repo(),
+			*deployment.ID,
+			&github.DeploymentStatusRequest{
+				State: String("error"),
+			},
+		)
 		return err
 	}
 
-	// TODO: Mark deploy as failed on error
 	_, _, err = ph.client.Repositories.CreateDeploymentStatus(
 		payload.Owner(), payload.Repo(),
 		*deployment.ID,
 		&github.DeploymentStatusRequest{
 			State:       String("success"),
-			TargetURL:   String(""),
+			TargetURL:   String(fmt.Sprintf("https://%s", route)),
 			Description: String("Deployed review app"),
 		},
 	)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (ph *PullHandler) Close(orgID string, payload PullPayload) error {
@@ -206,10 +208,34 @@ func (ph *PullHandler) Close(orgID string, payload PullPayload) error {
 	err = ph.cfClient.Target(orgID)
 	err = ph.cfClient.Delete(space)
 
+	deployments, _, err := ph.client.Repositories.ListDeployments(
+		payload.Owner(), payload.Repo(),
+		&github.DeploymentsListOptions{
+			Ref:         payload.PullRequest.Head.Sha,
+			Task:        "deploy:review",
+			Environment: "review",
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	if len(deployments) == 0 {
+		return nil
+	}
+
+	_, _, err = ph.client.Repositories.CreateDeploymentStatus(
+		payload.Owner(), payload.Repo(),
+		*deployments[0].ID,
+		&github.DeploymentStatusRequest{
+			State:       String("inactive"),
+			Description: String("Deleted review app"),
+		},
+	)
 	return err
 }
 
-func (ph *PullHandler) getUrl(user, repo, sha string) (string, error) {
+func (ph *PullHandler) getArchiveURL(user, repo, sha string) (string, error) {
 	ref := &github.RepositoryContentGetOptions{Ref: sha}
 	url, _, err := ph.client.Repositories.GetArchiveLink(user, repo, "tarball", ref)
 	if err != nil {
@@ -224,7 +250,7 @@ func (ph *PullHandler) download(payload PullPayload) (string, error) {
 		return "", err
 	}
 
-	url, err := ph.getUrl(payload.Owner(), payload.Repo(), payload.PullRequest.Head.Sha)
+	url, err := ph.getArchiveURL(payload.Owner(), payload.Repo(), payload.PullRequest.Head.Sha)
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err

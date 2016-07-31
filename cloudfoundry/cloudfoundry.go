@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudfoundry/cli/cf/api/resources"
+
 	"github.com/jmcarp/cf-review-app/models"
 )
 
@@ -34,28 +36,33 @@ func (cf *CloudFoundry) Login() error {
 	return cf.cf("auth", cf.username, cf.password).Run()
 }
 
-func (cf *CloudFoundry) Target(org string) error {
+func (cf *CloudFoundry) Target(orgID string) error {
+	org, err := cf.getOrg(orgID)
+	if err != nil {
+		return err
+	}
+
 	args := []string{"target", "-o", org}
 	return cf.cf(args...).Run()
 }
 
-func (cf *CloudFoundry) Create(app models.App, space string) error {
+func (cf *CloudFoundry) Create(app models.App, space string) (string, error) {
 	err := cf.createSpace(space)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	err = cf.createServices(app)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	err = cf.createApp(app.Name, app.Manifest)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return cf.getRoute(app.Name)
 }
 
 func (cf *CloudFoundry) Delete(space string) error {
@@ -88,6 +95,20 @@ func (cf *CloudFoundry) createServices(app models.App) error {
 	return nil
 }
 
+func (cf *CloudFoundry) getOrg(orgID string) (string, error) {
+	buf := bytes.Buffer{}
+	cmd := cf.cf("curl", fmt.Sprintf("/v2/organizations/%s", orgID))
+	cmd.Stdout = io.MultiWriter(os.Stdout, &buf)
+	err := cmd.Run()
+	if err != nil {
+		return "", err
+	}
+
+	resource := resources.OrganizationResource{}
+	err = json.Unmarshal(buf.Bytes(), &resource)
+	return resource.Entity.Name, err
+}
+
 func (cf *CloudFoundry) createService(service models.Service) error {
 	args := []string{"create-service", service.Service, service.Plan, service.Name}
 	if len(service.Tags) > 0 {
@@ -114,7 +135,7 @@ func (cf *CloudFoundry) checkService(service models.Service, timeout int) error 
 	elapsed := 0
 
 	for {
-		var buf bytes.Buffer
+		buf := bytes.Buffer{}
 		cmd := cf.cf(args...)
 		cmd.Stdout = io.MultiWriter(os.Stdout, &buf)
 		err := cmd.Run()
@@ -151,4 +172,23 @@ func (cf *CloudFoundry) cf(args ...string) *exec.Cmd {
 	cmd.Env = append(os.Environ(), "CF_COLOR=true")
 
 	return cmd
+}
+
+func (cf *CloudFoundry) getRoute(name string) (string, error) {
+	buf := bytes.Buffer{}
+	cmd := cf.cf("app", name)
+	cmd.Stdout = io.MultiWriter(os.Stdout, &buf)
+	err := cmd.Run()
+	if err != nil {
+		return "", err
+	}
+
+	output := strings.Split(buf.String(), "\n")
+	for _, line := range output {
+		if strings.Index(line, "urls: ") == 0 {
+			return strings.Replace(line, "urls: ", "", 1), nil
+		}
+	}
+
+	return "", fmt.Errorf("No URL found for app %s", name)
 }
