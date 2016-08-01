@@ -5,9 +5,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/gorilla/mux"
-
 	"code.cloudfoundry.org/lager"
+	"github.com/gorilla/mux"
 	"github.com/pivotal-cf/brokerapi"
 
 	"github.com/jmcarp/cf-review-app/broker"
