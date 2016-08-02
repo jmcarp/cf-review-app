@@ -12,6 +12,7 @@ import (
 	"github.com/jmcarp/cf-review-app/broker"
 	"github.com/jmcarp/cf-review-app/config"
 	"github.com/jmcarp/cf-review-app/handlers"
+	"github.com/jmcarp/cf-review-app/models"
 	"github.com/jmcarp/cf-review-app/webhooks"
 )
 
@@ -27,6 +28,11 @@ func main() {
 	db, err := config.Connect(settings.DatabaseURL)
 	if err != nil {
 		logger.Fatal("connect", err)
+	}
+
+	err = db.AutoMigrate(&models.Hook{}).Error
+	if err != nil {
+		logger.Fatal("migrate", err)
 	}
 
 	credentials := brokerapi.BrokerCredentials{
