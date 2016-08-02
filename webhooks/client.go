@@ -65,7 +65,7 @@ func (c *Client) Bind(owner, repo, instanceID, secret string) (int, error) {
 		Config: map[string]interface{}{
 			"url":          u.String(),
 			"secret":       secret,
-			"content_type": "application/json",
+			"content_type": "json",
 		},
 	}
 

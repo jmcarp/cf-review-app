@@ -1,8 +1,10 @@
 ---
 applications:
 - name: review-app
-  command: cf-review-app
+  command: ./scripts/run.sh
   memory: 256M
 buildpack: https://github.com/cloudfoundry/go-buildpack#v1.7.11
 services:
 - rds-review
+env:
+  GO_INSTALL_PACKAGE_SPEC: ". ./vendor/github.com/cloudfoundry/cli"
