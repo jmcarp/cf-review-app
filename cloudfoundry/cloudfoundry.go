@@ -159,7 +159,7 @@ func (cf *CloudFoundry) checkService(service models.Service, timeout int) error 
 }
 
 func (cf *CloudFoundry) createApp(app, manifest string) error {
-	args := []string{"push", app, "-f", manifest}
+	args := []string{"push", app, "-f", manifest, "--random-route"}
 	return cf.cf(args...).Run()
 }
 

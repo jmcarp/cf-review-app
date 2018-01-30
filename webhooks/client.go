@@ -168,13 +168,6 @@ func (ph *PullHandler) Open(orgID string, payload PullPayload) error {
 		return err
 	}
 
-	dest := filepath.Join(appPath, fmt.Sprintf("manifest-review-%s.yml", payload.PullRequest.Head.Sha))
-	err = utils.MakeManifest(app.Name, app.Manifest, dest)
-	if err != nil {
-		return err
-	}
-	app.Manifest = dest
-
 	err = ph.cfClient.Login()
 	err = ph.cfClient.Target(orgID)
 	route, err := ph.cfClient.Create(app, space)
