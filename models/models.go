@@ -8,7 +8,7 @@ type Hook struct {
 	OrgID      string `gorm:"not null;unique_index:idx_org_owner_repo"`
 	Owner      string `gorm:"not null;unique_index:idx_org_owner_repo"`
 	Repo       string `gorm:"not null;unique_index:idx_org_owner_repo"`
-	HookID     int
+	HookID     int64
 }
 
 type App struct {

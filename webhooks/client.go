@@ -1,6 +1,7 @@
 package webhooks
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -28,8 +29,8 @@ func Bool(b bool) *bool {
 }
 
 type WebhookClient interface {
-	Bind(owner, repo, instanceID, secret string) (int, error)
-	Unbind(owner, repo string, hookID int) error
+	Bind(owner, repo, instanceID, secret string) (int64, error)
+	Unbind(owner, repo string, hookID int64) error
 }
 
 type Client struct {
@@ -51,7 +52,7 @@ func NewClient(token string, settings config.Settings) WebhookClient {
 }
 
 // Bind creates a GitHub webhook
-func (c *Client) Bind(owner, repo, instanceID, secret string) (int, error) {
+func (c *Client) Bind(owner, repo, instanceID, secret string) (int64, error) {
 	u, err := url.Parse(c.settings.BaseURL)
 	if err != nil {
 		return 0, err
@@ -69,7 +70,7 @@ func (c *Client) Bind(owner, repo, instanceID, secret string) (int, error) {
 		},
 	}
 
-	hook, _, err = c.client.Repositories.CreateHook(owner, repo, hook)
+	hook, _, err = c.client.Repositories.CreateHook(context.Background(), owner, repo, hook)
 	if err != nil {
 		return 0, err
 	}
@@ -78,8 +79,8 @@ func (c *Client) Bind(owner, repo, instanceID, secret string) (int, error) {
 }
 
 // Unbind deletes a GitHub webhook
-func (c *Client) Unbind(owner, repo string, hookID int) error {
-	_, err := c.client.Repositories.DeleteHook(owner, repo, hookID)
+func (c *Client) Unbind(owner, repo string, hookID int64) error {
+	_, err := c.client.Repositories.DeleteHook(context.Background(), owner, repo, hookID)
 	return err
 }
 
@@ -157,6 +158,7 @@ func (ph *PullHandler) Open(orgID string, payload PullPayload) error {
 	space := getSpace(payload.Owner(), payload.Repo(), payload.Number)
 
 	deployment, _, err := ph.client.Repositories.CreateDeployment(
+		context.Background(),
 		payload.Owner(), payload.Repo(),
 		&github.DeploymentRequest{
 			Ref:         String(payload.PullRequest.Head.Sha),
@@ -173,6 +175,7 @@ func (ph *PullHandler) Open(orgID string, payload PullPayload) error {
 	route, err := ph.cfClient.Create(app, space)
 	if err != nil {
 		ph.client.Repositories.CreateDeploymentStatus(
+			context.Background(),
 			payload.Owner(), payload.Repo(),
 			*deployment.ID,
 			&github.DeploymentStatusRequest{
@@ -183,11 +186,12 @@ func (ph *PullHandler) Open(orgID string, payload PullPayload) error {
 	}
 
 	_, _, err = ph.client.Repositories.CreateDeploymentStatus(
+		context.Background(),
 		payload.Owner(), payload.Repo(),
 		*deployment.ID,
 		&github.DeploymentStatusRequest{
 			State:       String("success"),
-			TargetURL:   String(fmt.Sprintf("https://%s", route)),
+			LogURL:      String(fmt.Sprintf("https://%s", route)),
 			Description: String("Deployed review app"),
 		},
 	)
@@ -202,6 +206,7 @@ func (ph *PullHandler) Close(orgID string, payload PullPayload) error {
 	err = ph.cfClient.Delete(space)
 
 	deployments, _, err := ph.client.Repositories.ListDeployments(
+		context.Background(),
 		payload.Owner(), payload.Repo(),
 		&github.DeploymentsListOptions{
 			Ref:         payload.PullRequest.Head.Sha,
@@ -218,6 +223,7 @@ func (ph *PullHandler) Close(orgID string, payload PullPayload) error {
 	}
 
 	_, _, err = ph.client.Repositories.CreateDeploymentStatus(
+		context.Background(),
 		payload.Owner(), payload.Repo(),
 		*deployments[0].ID,
 		&github.DeploymentStatusRequest{
@@ -230,7 +236,7 @@ func (ph *PullHandler) Close(orgID string, payload PullPayload) error {
 
 func (ph *PullHandler) getArchiveURL(user, repo, sha string) (string, error) {
 	ref := &github.RepositoryContentGetOptions{Ref: sha}
-	url, _, err := ph.client.Repositories.GetArchiveLink(user, repo, "tarball", ref)
+	url, _, err := ph.client.Repositories.GetArchiveLink(context.Background(), user, repo, "tarball", ref)
 	if err != nil {
 		return "", err
 	}

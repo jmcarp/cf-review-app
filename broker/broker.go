@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -45,7 +46,7 @@ func New(m webhooks.HookManager) ReviewBroker {
 	return ReviewBroker{hookManager: m}
 }
 
-func (b *ReviewBroker) Services() []brokerapi.Service {
+func (b *ReviewBroker) Services(ctx context.Context) []brokerapi.Service {
 	service := brokerapi.Service{}
 
 	buf, err := ioutil.ReadFile("./catalog.json")
@@ -62,6 +63,7 @@ func (b *ReviewBroker) Services() []brokerapi.Service {
 }
 
 func (b *ReviewBroker) Provision(
+	ctx context.Context,
 	instanceID string,
 	details brokerapi.ProvisionDetails,
 	asyncAllowed bool,
@@ -87,22 +89,22 @@ func (b *ReviewBroker) Provision(
 	return spec, nil
 }
 
-func (b *ReviewBroker) LastOperation(instanceID, operationData string) (brokerapi.LastOperation, error) {
+func (b *ReviewBroker) LastOperation(ctx context.Context, instanceID, operationData string) (brokerapi.LastOperation, error) {
 	return brokerapi.LastOperation{}, nil
 }
 
-func (b *ReviewBroker) Deprovision(instanceID string, details brokerapi.DeprovisionDetails, asyncAllowed bool) (brokerapi.DeprovisionServiceSpec, error) {
+func (b *ReviewBroker) Deprovision(ctx context.Context, instanceID string, details brokerapi.DeprovisionDetails, asyncAllowed bool) (brokerapi.DeprovisionServiceSpec, error) {
 	return brokerapi.DeprovisionServiceSpec{}, b.hookManager.Delete(instanceID)
 }
 
-func (b *ReviewBroker) Bind(instanceID, bindingID string, details brokerapi.BindDetails) (brokerapi.Binding, error) {
+func (b *ReviewBroker) Bind(ctx context.Context, instanceID, bindingID string, details brokerapi.BindDetails) (brokerapi.Binding, error) {
 	return brokerapi.Binding{}, errors.New("Service does not support bind")
 }
 
-func (b *ReviewBroker) Unbind(instanceID, bindingID string, details brokerapi.UnbindDetails) error {
+func (b *ReviewBroker) Unbind(ctx context.Context, instanceID, bindingID string, details brokerapi.UnbindDetails) error {
 	return errors.New("Service does not support bind")
 }
 
-func (b *ReviewBroker) Update(instanceID string, details brokerapi.UpdateDetails, asyncAllowed bool) (brokerapi.UpdateServiceSpec, error) {
+func (b *ReviewBroker) Update(ctx context.Context, instanceID string, details brokerapi.UpdateDetails, asyncAllowed bool) (brokerapi.UpdateServiceSpec, error) {
 	return brokerapi.UpdateServiceSpec{}, errors.New("Service does not support update")
 }

@@ -8,15 +8,16 @@
   revision = "b31f603f5e1e047fdb38584e1a922dcc5c4de5c8"
 
 [[projects]]
+  branch = "v2-v3-switch-152873363"
   name = "code.cloudfoundry.org/cli"
   packages = ["actor/actionerror","api/cloudcontroller","api/cloudcontroller/ccerror","api/cloudcontroller/ccv2","api/cloudcontroller/ccv2/constant","api/cloudcontroller/ccv2/internal","api/cloudcontroller/ccversion","api/plugin/pluginerror","api/uaa","api/uaa/internal","cf/formatters","cf/i18n","cf/models","command/translatableerror","i18n/resources","types","util","util/clissh/ssherror","util/configv3","util/generic","util/manifest","util/ui","version"]
-  revision = "b6f4653192da5551e5a019efd908bc72a39d6ca3"
-  version = "v6.34.0"
+  revision = "7125d89d01bb7cb5941e2c6497f87e60c8f8ea00"
 
 [[projects]]
+  branch = "master"
   name = "code.cloudfoundry.org/lager"
   packages = ["."]
-  revision = "62951a8009ab331bb21dc418074fa54e66eb9b6a"
+  revision = "0bfa98e49e7a976af91e918d47978f07c00b081f"
 
 [[projects]]
   name = "github.com/SermoDigital/jose"
@@ -51,28 +52,32 @@
 [[projects]]
   name = "github.com/golang/protobuf"
   packages = ["proto"]
-  revision = "874264fbbb43f4d91e999fecb4b40143ed611400"
+  revision = "925541529c1fa6821df4e44ce2723319eb2be768"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/google/go-github"
   packages = ["github"]
-  revision = "331e3f619021723128623d4db765a81ba1e1f81e"
+  revision = "e48060a28fac52d0f1cb758bc8b87c07bac4a87d"
+  version = "v15.0.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/google/go-querystring"
   packages = ["query"]
-  revision = "9235644dd9e52eeae6fa48efd539fdc351a0af53"
+  revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
 
 [[projects]]
   name = "github.com/gorilla/context"
   packages = ["."]
-  revision = "aed02d124ae4a0e94fea4541c8effd05bf0c8296"
+  revision = "1ea25387ff6f684839d82767c1733ff4d4d15d0a"
+  version = "v1.1"
 
 [[projects]]
   name = "github.com/gorilla/mux"
   packages = ["."]
-  revision = "0eeaf8392f5b04950925b8a69fe70f110fa7cbfc"
-  version = "v1.1"
+  revision = "53c1911da2b537f792e7cafcb446b05ffe33b996"
+  version = "v1.6.1"
 
 [[projects]]
   name = "github.com/jinzhu/gorm"
@@ -81,20 +86,22 @@
   version = "v1.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/jinzhu/inflection"
   packages = ["."]
-  revision = "8f4d3a0d04ce0b7c0cf3126fb98524246d00d102"
+  revision = "1c35d901db3da928c72a72d8458480cc9ade058f"
 
 [[projects]]
   name = "github.com/kelseyhightower/envconfig"
   packages = ["."]
-  revision = "ac12b1f15efba734211a556d8b125110dc538016"
-  version = "1.1.0"
+  revision = "f611eb38b3875cc3bd991ca91c51d06446afa14c"
+  version = "v1.3.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/lib/pq"
   packages = [".","hstore","oid"]
-  revision = "4dd446efc17690bc53e154025146f73203b18309"
+  revision = "19c8e9ad00952ce0c64489b60e8df88bb16dd514"
 
 [[projects]]
   branch = "master"
@@ -121,9 +128,10 @@
   revision = "97311d9f7767e3d6f422ea06661bc2c7a19e8a5d"
 
 [[projects]]
+  branch = "master"
   name = "github.com/pivotal-cf/brokerapi"
   packages = [".","auth"]
-  revision = "4cb85be8e4d5cb863820f5ab5c3a61b0f1afb050"
+  revision = "35946a0079bda144d0c9ed68df36899451f90209"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
@@ -150,20 +158,22 @@
   revision = "1875d0a70c90e57f11972aefd42276df65e895b9"
 
 [[projects]]
+  branch = "master"
   name = "golang.org/x/net"
-  packages = ["context"]
-  revision = "3797cd8864994d713d909eda5e61ede8683fdc12"
+  packages = ["context","context/ctxhttp"]
+  revision = "0ed95abb35c445290478a5348a7b38bb154135fd"
 
 [[projects]]
+  branch = "master"
   name = "golang.org/x/oauth2"
   packages = [".","internal"]
-  revision = "1364adb2c63445016c5ed4518fc71f6a3cda6169"
+  revision = "a032972e28060ca4f5644acffae3dfc268cc09db"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix","windows"]
-  revision = "ff2a66f350cefa5c93a634eadb5d25bb60c85a9c"
+  revision = "3dbebcf8efb6a5011a60c2b4591c1022a759af8a"
 
 [[projects]]
   branch = "master"
@@ -174,7 +184,8 @@
 [[projects]]
   name = "google.golang.org/appengine"
   packages = ["internal","internal/base","internal/datastore","internal/log","internal/remote_api","internal/urlfetch","urlfetch"]
-  revision = "267c27e7492265b84fc6719503b14a1e17975d79"
+  revision = "150dc57a1b433e64154302bdc40b6bb8aefa313a"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "v2"
